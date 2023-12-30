@@ -94,6 +94,7 @@ static char not_found_request_response[] =
 #define READ_TIMEOUT  30
 
 extern int stop;
+struct http_server server;
 
 
 struct http_header {
@@ -321,6 +322,7 @@ static void *http_client_thread( void *arg )
   }
 
   printf("thread_id: %ld request %s\n", pthread_self(), header.uri);
+  ca->request_type= STREAM;
 
   switch (ca->request_type) {
     case SNAPSHOT:

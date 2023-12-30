@@ -64,6 +64,8 @@
 #include "http.h"
 #include "avilib.h"
 
+extern struct http_server server;
+
 #define SOURCE_VERSION "1.0.1"
 #define VIDEODEV "/dev/video0"
 #define NELEMS(x) (sizeof(x) / sizeof((x)[0]))
@@ -273,7 +275,7 @@ int main(int argc, char *argv[])
   char *dev = VIDEODEV;
   char *fmtStr = "UNKNOWN";
   int i;
-  cd.format = V4L2_PIX_FMT_MJPEG;
+  cd.format = V4L2_PIX_FMT_YUYV;
   cd.fps= 5;
   cd.daemon = 0;
   cd.width=640;
