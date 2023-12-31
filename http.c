@@ -322,7 +322,7 @@ static void *http_client_thread( void *arg )
   }
 
   printf("thread_id: %ld request %s\n", pthread_self(), header.uri);
-  ca->request_type= STREAM;
+  //ca->request_type= STREAM;
 
   switch (ca->request_type) {
     case SNAPSHOT:
@@ -439,6 +439,7 @@ int http_listener(struct http_server *srv)
     ca = malloc(sizeof(struct clientArgs));
     ca->server = srv;
     ca->socket = accept(srv->sd, (struct sockaddr *)&ca->client_addr, (socklen_t*)&c);
+    ca->request_type = STREAM;
     if (ca->socket < 0) {
       perror("accept failed");
       free(ca);
