@@ -23,6 +23,9 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <time.h>
+#include <stdint.h>
+
 
 #include "v4l2uvc.h"
 
@@ -268,6 +271,7 @@ int uvcGrab(struct vdIn *vd)
 {
 #define HEADERFRAME1 0xaf
   int ret;
+    struct timespec ts;
 
   if (!vd->isstreaming) {
     if (video_enable(vd)){
@@ -280,17 +284,22 @@ int uvcGrab(struct vdIn *vd)
   vd->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   vd->buf.memory = V4L2_MEMORY_MMAP;
 
+    clock_gettime(CLOCK_MONOTONIC, &ts);
   ret = ioctl(vd->fd, VIDIOC_DQBUF, &vd->buf);
   if (ret < 0) {
     printf("Unable to dequeue buffer (%d).\n", errno);
     goto err;
   }
-
+    uint64_t t = ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL;
+    uint64_t it = vd->buf.timestamp.tv_sec * 1000000LL + vd->buf.timestamp.tv_usec;
+    printf("image time = %lld\n", it);
+    printf("usert time = %lld\n", t);
+    /*
   switch (vd->formatIn) {
     case V4L2_PIX_FMT_JPEG:
     case V4L2_PIX_FMT_MJPEG:
         if (vd->buf.bytesused <= HEADERFRAME1) {
-            /* Prevent crash on empty image */
+
             printf("Ignoring empty buffer ...\n");
             return 0;
         }
@@ -313,7 +322,7 @@ int uvcGrab(struct vdIn *vd)
         goto err;
     break;
   }
-
+*/
   ret = ioctl(vd->fd, VIDIOC_QBUF, &vd->buf);
   if (ret < 0) {
     printf("Unable to requeue buffer (%d).\n", errno);

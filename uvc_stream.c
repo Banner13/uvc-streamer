@@ -57,6 +57,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "v4l2uvc.h"
 #include "jpeg_utils.h"
@@ -138,22 +139,35 @@ static void *cam_thread( void *arg ) {
   struct thread_buff *tbuff = (struct thread_buff*)arg;
   struct buff * b = NULL;
 
+  struct timespec tend, last;
+
   while( !stop ) {
     /* grab a frame */
-    if( uvcGrab(cd.videoIn) < 0 ) {
+    fd_set fds;
+    int r;
+
+    FD_ZERO(&fds);
+    FD_SET(cd.videoIn->fd, &fds);
+
+    r = select(cd.videoIn->fd + 1, &fds, NULL, NULL, NULL);
+
+    if( uvcGrab(cd.videoIn) ) {
       fprintf(stderr, "Error grabbing\n");
       exit(1);
     }
+    clock_gettime(CLOCK_MONOTONIC, &tend);
 
-    /* copy frame to global buffer */
+    uint64_t tendtt = tend.tv_sec * 1000000LL + tend.tv_nsec / 1000LL;
+    uint64_t lasttt = last.tv_sec * 1000000LL + last.tv_nsec / 1000LL;
+
+    uint64_t all_time = tendtt - lasttt;
+    last = tend;
+    printf("tendtt is %lld, lasttt is %lld\n", tendtt, lasttt);
+    printf("all_time is %d, fps is %lld\n\n", all_time, 1000000LL/all_time);
+
+/*
     pthread_mutex_lock( &tbuff->lock );
 
-   /*
-    * If capturing in YUV mode convert to JPEG now.
-    * This compression requires many CPU cycles, so try to avoid YUV format.
-    * Getting JPEGs straight from the webcam, is one of the major advantages of
-    * Linux-UVC compatible devices.
-    */
     b = queue_pop(&(tbuff)->qbuff);
 
     if(cd.videoIn->formatIn == V4L2_PIX_FMT_YUYV) {
@@ -174,14 +188,15 @@ static void *cam_thread( void *arg ) {
     }
 
     queue_push(&(tbuff)->qbuff, b);
-    /* signal fresh_frame */
+
     pthread_cond_broadcast(&tbuff->cond);
     pthread_mutex_unlock(&tbuff->lock);
 
-    /* only use usleep if the fps is below 5, otherwise the overhead is too long */
+
     if ( cd.videoIn->fps < 5 ) {
       usleep(1000*1000/cd.videoIn->fps);
     }
+*/
   }
   printf("Exit cam thread\n");
   pthread_exit(NULL);
